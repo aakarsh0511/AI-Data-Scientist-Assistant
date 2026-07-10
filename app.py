@@ -6,7 +6,13 @@ from src.data_processing import (
     get_column_information,
     get_statistics
 )
-
+from src.eda import (
+    missing_value_analysis,
+    numerical_distribution,
+    correlation_heatmap,
+    categorical_analysis,
+    generate_basic_insights
+)
 
 
 # Page Configuration
@@ -143,4 +149,118 @@ if uploaded_file is not None:
 else:
     st.info(
         "Upload a dataset to start analysis."
+    )
+
+
+
+
+
+
+# -----------------------------
+# Exploratory Data Analysis
+# -----------------------------
+
+
+st.header(
+    "📈 Exploratory Data Analysis"
+)
+
+
+
+# Insights
+
+st.subheader(
+    "Automated Insights"
+)
+
+
+insights = generate_basic_insights(df)
+
+
+for insight in insights:
+
+    st.write(
+        "• " + insight
+    )
+
+
+
+# Missing Values
+
+st.subheader(
+    "Missing Value Analysis"
+)
+
+
+missing_fig = missing_value_analysis(df)
+
+
+if missing_fig:
+
+    st.plotly_chart(
+        missing_fig,
+        use_container_width=True
+    )
+
+else:
+
+    st.success(
+        "No missing values detected"
+    )
+
+
+
+# Numerical Distribution
+
+st.subheader(
+    "Numerical Feature Distribution"
+)
+
+
+distribution_figures = numerical_distribution(df)
+
+
+for fig in distribution_figures:
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+
+
+# Correlation
+
+st.subheader(
+    "Feature Correlation"
+)
+
+
+corr_fig = correlation_heatmap(df)
+
+
+if corr_fig:
+
+    st.plotly_chart(
+        corr_fig,
+        use_container_width=True
+    )
+
+
+
+# Categorical Analysis
+
+st.subheader(
+    "Categorical Feature Analysis"
+)
+
+
+cat_figures = categorical_analysis(df)
+
+
+for fig in cat_figures:
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
     )
