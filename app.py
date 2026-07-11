@@ -3,6 +3,8 @@ import pandas as pd
 import shap
 import matplotlib.pyplot as plt
 from src.explainability import explain_model
+from src.llm import generate_business_insights
+from src.report_generator import create_pdf_report
 if "best_model" not in st.session_state:
     st.session_state.best_model = None
 
@@ -14,6 +16,23 @@ if "X_data" not in st.session_state:
 if "problem_type" not in st.session_state:
     st.session_state.problem_type = None
 
+
+if "shap_values" not in st.session_state:
+    st.session_state.shap_values = None
+
+
+if "X_processed" not in st.session_state:
+    st.session_state.X_processed = None
+
+
+if "model_results" not in st.session_state:
+    st.session_state.model_results = None
+
+if "shap_summary" not in st.session_state:
+    st.session_state.shap_summary = None
+
+if "ai_report" not in st.session_state:
+    st.session_state.ai_report = None
 
 from src.data_processing import (
     load_dataset,
@@ -42,7 +61,7 @@ from src.model_training import train_models
 # Page Configuration
 
 st.set_page_config(
-    page_title="AI Data Scientist Assistant",
+    page_title="AI Data Scientist",
     page_icon="🤖",
     layout="wide"
 )
@@ -56,9 +75,17 @@ st.title(
 
 st.write(
     """
-    Upload your dataset and automatically analyze it.
-    """
+Upload any dataset and automatically perform:
+
+- Data Analysis
+- ML Model Training
+- Model Comparison
+- Explainable AI
+- AI Generated Business Insights
+"""
 )
+
+st.divider()
 
 
 
@@ -356,6 +383,8 @@ if st.button("Train Models"):
 
     st.session_state.problem_type = problem_type
 
+    st.session_state.model_results = results
+
     st.subheader(
         "Model Performance"
     )
@@ -388,11 +417,17 @@ if st.button("Generate SHAP Explanation"):
 
     if st.session_state.best_model is not None:
 
-
         shap_values, X_processed = explain_model(
             st.session_state.best_model,
             st.session_state.X_data
         )
+        st.session_state.shap_values = shap_values
+
+        st.session_state.X_processed = X_processed
+
+        st.session_state.shap_values = shap_values
+
+        st.session_state.X_processed = X_processed
 
 
         st.success(
@@ -426,3 +461,153 @@ if st.button("Generate SHAP Explanation"):
         st.warning(
             "Please train the model first."
         )
+
+
+
+
+
+
+shap_importance = pd.DataFrame(
+    {
+        "Feature": st.session_state.X_processed.columns,
+
+        "Importance": abs(
+            st.session_state.shap_values.values
+        ).mean(axis=0)
+    }
+)
+
+
+shap_importance = (
+    shap_importance
+    .sort_values(
+        by="Importance",
+        ascending=False
+    )
+    .head(10)
+)
+
+
+st.session_state.shap_summary = (
+    shap_importance.to_string()
+)
+
+
+
+st.header(
+    "🤖 AI Business Analyst Report"
+)
+
+
+if st.button(
+    "Generate AI Insights"
+):
+
+    if (
+        st.session_state.model_results is not None
+        and st.session_state.shap_summary is not None
+    ):
+
+        report = generate_business_insights(
+
+            dataset_summary=str(
+                st.session_state.X_data.describe()
+            ),
+
+            model_results=str(
+                st.session_state.model_results
+            ),
+
+            shap_summary=
+            st.session_state.shap_summary
+
+        )
+
+
+        # Store Gemini output in session state
+        st.session_state.ai_report = report
+
+
+        st.success(
+            "AI Business Report Generated Successfully"
+        )
+
+
+        st.divider()
+
+
+        # Display report
+
+        st.markdown(
+            st.session_state.ai_report
+        )
+
+
+    else:
+
+        st.warning(
+            "Please train model and generate SHAP explanation first."
+        )
+
+st.header(
+    "📄 Generate PDF Report"
+)
+
+
+if st.button(
+    "Create Report"
+):
+
+    if (
+        st.session_state.shap_summary
+        and
+        st.session_state.model_results
+    ):
+
+
+        pdf_file = create_pdf_report(
+
+            dataset_summary=str(
+                st.session_state.X_data.describe()
+            ),
+
+
+            model_results=str(
+                st.session_state.model_results
+            ),
+
+
+            shap_summary=
+            st.session_state.shap_summary,
+
+            ai_report=st.session_state.ai_report
+        )
+
+
+        with open(
+            pdf_file,
+            "rb"
+        ) as file:
+
+
+            st.download_button(
+
+                label="Download AI Report PDF",
+
+                data=file,
+
+                file_name=
+                "AI_Data_Scientist_Report.pdf",
+
+                mime=
+                "application/pdf"
+
+            )
+
+
+    else:
+
+        st.warning(
+            "Generate model, SHAP and AI insights first."
+        )
+
