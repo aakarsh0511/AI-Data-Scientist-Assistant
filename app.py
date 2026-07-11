@@ -1,5 +1,19 @@
 import streamlit as st
 import pandas as pd
+import shap
+import matplotlib.pyplot as plt
+from src.explainability import explain_model
+if "best_model" not in st.session_state:
+    st.session_state.best_model = None
+
+
+if "X_data" not in st.session_state:
+    st.session_state.X_data = None
+
+
+if "problem_type" not in st.session_state:
+    st.session_state.problem_type = None
+
 
 from src.data_processing import (
     load_dataset,
@@ -336,6 +350,12 @@ if st.button("Train Models"):
     )
 
 
+    st.session_state.best_model = best_model
+
+    st.session_state.X_data = X
+
+    st.session_state.problem_type = problem_type
+
     st.subheader(
         "Model Performance"
     )
@@ -358,3 +378,51 @@ if st.button("Train Models"):
     st.success(
         "Best Model Selected Automatically"
     )
+    st.header(
+    "🔍 Model Explainability"
+)
+
+
+if st.button("Generate SHAP Explanation"):
+
+
+    if st.session_state.best_model is not None:
+
+
+        shap_values, X_processed = explain_model(
+            st.session_state.best_model,
+            st.session_state.X_data
+        )
+
+
+        st.success(
+            "SHAP values generated successfully"
+        )
+
+
+        st.subheader(
+            "Feature Importance"
+        )
+
+
+        fig, ax = plt.subplots()
+
+
+        shap.summary_plot(
+            shap_values,
+            X_processed,
+            show=False
+        )
+
+
+        st.pyplot(
+            fig,
+            clear_figure=True
+        )
+
+
+    else:
+
+        st.warning(
+            "Please train the model first."
+        )
