@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 
 from src.data_processing import (
     load_dataset,
@@ -13,6 +14,15 @@ from src.eda import (
     categorical_analysis,
     generate_basic_insights
 )
+
+from src.problem_detection import detect_problem_type
+
+from src.preprocessing import create_preprocessor
+
+from src.model_training import train_models
+
+
+
 
 
 # Page Configuration
@@ -263,4 +273,88 @@ for fig in cat_figures:
     st.plotly_chart(
         fig,
         use_container_width=True
+    )
+
+
+
+
+
+st.header("🤖 Machine Learning")
+
+
+
+target_column = st.selectbox(
+    "Select Target Column",
+    df.columns
+)
+
+
+
+if st.button("Train Models"):
+
+
+# Remove rows where target is missing
+
+    df_ml = df.dropna(
+        subset=[target_column]
+    )
+
+
+    X = df_ml.drop(
+        target_column,
+        axis=1
+    )
+
+
+    y = df_ml[target_column]
+
+
+    problem_type = detect_problem_type(
+        df,
+        target_column
+    )
+
+
+    st.write(
+        "Problem Type:",
+        problem_type
+    )
+
+
+
+    preprocessor = create_preprocessor(
+        X
+    )
+
+
+
+    results, best_model = train_models(
+        X,
+        y,
+        preprocessor,
+        problem_type
+    )
+
+
+    st.subheader(
+        "Model Performance"
+    )
+
+
+    result_df = pd.DataFrame(
+        results.items(),
+        columns=[
+            "Model",
+            "Score"
+        ]
+    )
+
+
+    st.dataframe(
+        result_df
+    )
+
+
+    st.success(
+        "Best Model Selected Automatically"
     )
