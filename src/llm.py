@@ -226,7 +226,8 @@ Formatting rules:
 - Do not use markdown symbols.
 - Use clean headings.
 - Use simple business language.
-
+- The report MUST end immediately after FINAL CONCLUSION.
+- Do not add anything after FINAL CONCLUSION.
 """
 
 
@@ -235,6 +236,6 @@ Formatting rules:
     )
 
 
-    return clean_report(
-        response.content
-    )
+    report = response.content
+
+    return clean_report(report)

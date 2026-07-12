@@ -21,6 +21,8 @@ if "shap_summary" not in st.session_state:
     st.session_state.shap_summary = None
 if "ai_report" not in st.session_state:
     st.session_state.ai_report = None
+if "df" not in st.session_state:
+    st.session_state.df = None
 from src.data_processing import (
     load_dataset,
     get_dataset_summary,
@@ -62,9 +64,11 @@ uploaded_file = st.file_uploader(
     "Upload CSV or Excel file",
     type=["csv", "xlsx"]
 )
+df=None
 if uploaded_file is not None:
     # Load Dataset
     df = load_dataset(uploaded_file)
+    st.session_state.df = df
     st.success(
         "Dataset loaded successfully!"
     )
@@ -159,123 +163,142 @@ else:
 # Exploratory Data Analysis
 # -----------------------------
 
+df = st.session_state.df
 
-st.header(
-    "📈 Exploratory Data Analysis"
-)
-
-
-
-# Insights
-
-st.subheader(
-    "Automated Insights"
-)
+if df is not None:
+    st.header("📈 Exploratory Data Analysis")
 
 
-insights = generate_basic_insights(df)
+    if df is not None:
+
+        st.subheader("Automated Insights")
+
+        insights = generate_basic_insights(df)
+
+        for insight in insights:
+            st.write("• " + insight)
 
 
-for insight in insights:
+    else:
 
-    st.write(
-        "• " + insight
+        st.info("Please upload a dataset first.")
+
+
+    # Insights
+
+    st.subheader(
+        "Automated Insights"
+    )
+   
+
+    insights = generate_basic_insights(df)
+
+
+    for insight in insights:
+
+        st.write(
+            "• " + insight
+        )
+
+
+
+    # Missing Values
+
+    st.subheader(
+        "Missing Value Analysis"
     )
 
 
-
-# Missing Values
-
-st.subheader(
-    "Missing Value Analysis"
-)
+    missing_fig = missing_value_analysis(df)
 
 
-missing_fig = missing_value_analysis(df)
+    if missing_fig:
+
+        st.plotly_chart(
+            missing_fig,
+            use_container_width=True
+        )
+
+    else:
+
+        st.success(
+            "No missing values detected"
+        )
 
 
-if missing_fig:
 
-    st.plotly_chart(
-        missing_fig,
-        use_container_width=True
+    # Numerical Distribution
+
+    st.subheader(
+        "Numerical Feature Distribution"
     )
+
+
+    distribution_figures = numerical_distribution(df)
+
+
+    for fig in distribution_figures:
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
+
+
+
+    # Correlation
+
+    st.subheader(
+        "Feature Correlation"
+    )
+
+
+    corr_fig = correlation_heatmap(df)
+
+
+    if corr_fig:
+
+        st.plotly_chart(
+            corr_fig,
+            use_container_width=True
+        )
+
+
+
+    # Categorical Analysis
+
+    st.subheader(
+        "Categorical Feature Analysis"
+    )
+
+
+    cat_figures = categorical_analysis(df)
+
+
+    for fig in cat_figures:
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
 
 else:
 
-    st.success(
-        "No missing values detected"
-    )
-
-
-
-# Numerical Distribution
-
-st.subheader(
-    "Numerical Feature Distribution"
-)
-
-
-distribution_figures = numerical_distribution(df)
-
-
-for fig in distribution_figures:
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
-
-
-
-# Correlation
-
-st.subheader(
-    "Feature Correlation"
-)
-
-
-corr_fig = correlation_heatmap(df)
-
-
-if corr_fig:
-
-    st.plotly_chart(
-        corr_fig,
-        use_container_width=True
-    )
-
-
-
-# Categorical Analysis
-
-st.subheader(
-    "Categorical Feature Analysis"
-)
-
-
-cat_figures = categorical_analysis(df)
-
-
-for fig in cat_figures:
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
-
-
+    st.info("Upload dataset first")
 
 
 
 st.header("🤖 Machine Learning")
 
+if df is not None:
 
-
-target_column = st.selectbox(
-    "Select Target Column",
-    df.columns
-)
+    target_column = st.selectbox(
+        "Select Target Column",
+        df.columns
+    )
+    st.write(df.columns)
+else:
+    st.warning("Please upload a dataset first")
 
 
 
@@ -415,17 +438,19 @@ if st.button("Generate SHAP Explanation"):
 
 
 
-if st.session_state.X_processed is not None:
+shap_importance = None
 
+if (
+    st.session_state.X_processed is not None
+    and st.session_state.shap_values is not None
+):
 
     shap_importance = pd.DataFrame(
         {
             "Feature": st.session_state.X_processed.columns,
-
             "Importance": abs(
                 st.session_state.shap_values.values
             ).mean(axis=0)
-
         }
     )
 
@@ -448,9 +473,10 @@ else:
     )
 
 
-st.session_state.shap_summary = (
-    shap_importance.to_string()
-)
+if shap_importance is not None:
+    st.session_state.shap_summary = shap_importance.to_string()
+else:
+    st.session_state.shap_summary = "SHAP importance not generated yet."
 
 
 
