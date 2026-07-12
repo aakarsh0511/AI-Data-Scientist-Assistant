@@ -252,6 +252,11 @@ def train_models(
 )
 
 
-    return results, best_model
+    return (
+    results,
+    best_model,
+    X_test,
+    y_test
+)
 
    

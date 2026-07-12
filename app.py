@@ -9,7 +9,7 @@ from src.feature_engineering import (feature_engineering_pipeline)
 from src.feature_selection import (select_features_using_shap)
 from src.model_optimization import (retrain_optimized_model)
 from src.model_comparison import compare_models
-
+from src.model_evaluation import ( evaluate_classification_model, evaluate_regression_model)
 
 if "best_model" not in st.session_state:
     st.session_state.best_model = None
@@ -45,7 +45,10 @@ if "optimized_features" not in st.session_state:
     st.session_state.optimized_features = None
 if "optimized_model_results" not in st.session_state:
     st.session_state.optimized_model_results = None
-
+if "X_test" not in st.session_state:
+    st.session_state.X_test = None
+if "y_test" not in st.session_state:
+    st.session_state.y_test = None
 from src.data_processing import (
     load_dataset,
     get_dataset_summary,
@@ -365,18 +368,26 @@ if st.button("Train Models"):
 
 
 
-    results, best_model = train_models(
-        X,
-        y,
-        preprocessor,
-        problem_type
-    )
+    (
+    results,
+    best_model,
+    X_test,
+    y_test
+) = train_models(
+    X,
+    y,
+    preprocessor,
+    problem_type
+)
 
 
     st.session_state.best_model = best_model
 
     st.session_state.X_data = X
     st.session_state.y_data = y
+    st.session_state.X_test = X_test
+
+    st.session_state.y_test = y_test
     st.session_state.problem_type = problem_type
 
     st.session_state.model_results = results
@@ -406,6 +417,74 @@ if st.button("Train Models"):
     st.info(
     "Model trained using automatically engineered features."
 )
+    
+st.header(
+    "📊 Detailed Model Evaluation"
+)
+
+
+if st.button(
+    "Generate Evaluation Report"
+):
+
+
+    if st.session_state.best_model is not None:
+
+
+        if st.session_state.problem_type == "Classification":
+
+
+            evaluation = evaluate_classification_model(
+
+                st.session_state.best_model,
+
+                st.session_state.X_test,
+
+                st.session_state.y_test
+
+            )
+
+
+        else:
+
+
+            evaluation = evaluate_regression_model(
+
+                st.session_state.best_model,
+
+                st.session_state.X_test,
+
+                st.session_state.y_test
+
+            )
+
+
+        evaluation_df = pd.DataFrame(
+
+            evaluation.items(),
+
+            columns=[
+                "Metric",
+                "Value"
+            ]
+
+        )
+
+
+        st.dataframe(
+            evaluation_df,
+            use_container_width=True
+        )
+
+
+    else:
+
+        st.warning(
+            "Train model first."
+        )
+
+
+
     st.header(
     "🔍 Model Explainability"
 )
