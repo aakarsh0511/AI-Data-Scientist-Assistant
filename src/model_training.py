@@ -1,25 +1,48 @@
-
 from sklearn.pipeline import Pipeline
 
 from sklearn.model_selection import train_test_split
 
 from sklearn.metrics import (
     accuracy_score,
-    mean_squared_error,
     r2_score
 )
 
 
 from sklearn.linear_model import (
     LogisticRegression,
-    LinearRegression
+    LinearRegression,
+    Ridge,
+    Lasso
+)
+
+
+from sklearn.tree import (
+    DecisionTreeClassifier,
+    DecisionTreeRegressor
 )
 
 
 from sklearn.ensemble import (
     RandomForestClassifier,
-    RandomForestRegressor
+    RandomForestRegressor,
+    GradientBoostingClassifier,
+    GradientBoostingRegressor
 )
+
+
+from sklearn.svm import (
+    SVC,
+    SVR
+)
+
+
+from sklearn.neighbors import (
+    KNeighborsClassifier,
+    KNeighborsRegressor
+)
+
+
+from sklearn.naive_bayes import GaussianNB
 
 
 from xgboost import (
@@ -45,7 +68,6 @@ def train_models(
     )
 
 
-
     results = {}
 
 
@@ -55,21 +77,40 @@ def train_models(
 
         models = {
 
-
             "Logistic Regression":
             LogisticRegression(
                 max_iter=1000
             ),
 
 
+            "Decision Tree":
+            DecisionTreeClassifier(),
+
+
             "Random Forest":
             RandomForestClassifier(),
+
+
+            "Gradient Boosting":
+            GradientBoostingClassifier(),
 
 
             "XGBoost":
             XGBClassifier(
                 eval_metric="logloss"
-            )
+            ),
+
+
+            "SVM":
+            SVC(),
+
+
+            "KNN":
+            KNeighborsClassifier(),
+
+
+            "Naive Bayes":
+            GaussianNB()
 
         }
 
@@ -85,12 +126,36 @@ def train_models(
             LinearRegression(),
 
 
+            "Ridge Regression":
+            Ridge(),
+
+
+            "Lasso Regression":
+            Lasso(),
+
+
+            "Decision Tree":
+            DecisionTreeRegressor(),
+
+
             "Random Forest":
             RandomForestRegressor(),
 
 
+            "Gradient Boosting":
+            GradientBoostingRegressor(),
+
+
             "XGBoost":
-            XGBRegressor()
+            XGBRegressor(),
+
+
+            "SVR":
+            SVR(),
+
+
+            "KNN":
+            KNeighborsRegressor()
 
         }
 
@@ -98,74 +163,95 @@ def train_models(
 
     best_model = None
 
-    best_score = 0
+
+    best_score = float("-inf")
 
 
 
     for name, model in models.items():
 
 
-        pipeline = Pipeline(
+        try:
 
-            steps=[
 
-                (
-                    "preprocessor",
-                    preprocessor
-                ),
+            pipeline = Pipeline(
 
-                (
-                    "model",
-                    model
+                steps=[
+
+                    (
+                        "preprocessor",
+                        preprocessor
+                    ),
+
+                    (
+                        "model",
+                        model
+                    )
+
+                ]
+
+            )
+
+
+            pipeline.fit(
+                X_train,
+                y_train
+            )
+
+
+            predictions = pipeline.predict(
+                X_test
+            )
+
+
+
+            if problem_type == "Classification":
+
+
+                score = accuracy_score(
+                    y_test,
+                    predictions
                 )
 
-            ]
 
-        )
-
-
-        pipeline.fit(
-            X_train,
-            y_train
-        )
+            else:
 
 
-
-        predictions = pipeline.predict(
-            X_test
-        )
+                score = r2_score(
+                    y_test,
+                    predictions
+                )
 
 
 
-        if problem_type == "Classification":
-
-
-            score = accuracy_score(
-                y_test,
-                predictions
-            )
-
-
-        else:
-
-
-            score = r2_score(
-                y_test,
-                predictions
+            results[name] = round(
+                score,
+                4
             )
 
 
 
-        results[name] = score
+            if score > best_score:
+
+                best_score = score
+
+                best_model = pipeline
 
 
 
-        if score > best_score:
+        except Exception as e:
 
-            best_score = score
+            results[name] = -1
 
-            best_model = pipeline
-
+    results = dict(
+    sorted(
+        results.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )
+)
 
 
     return results, best_model
+
+   

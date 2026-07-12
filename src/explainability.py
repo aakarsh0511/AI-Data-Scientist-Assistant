@@ -72,13 +72,24 @@ def explain_model(model, X):
 
 
     tree_models = [
-        "RandomForestClassifier",
-        "RandomForestRegressor",
-        "XGBClassifier",
-        "XGBRegressor",
-        "LGBMClassifier",
-        "LGBMRegressor"
-    ]
+
+    "DecisionTreeClassifier",
+
+    "DecisionTreeRegressor",
+
+    "RandomForestClassifier",
+
+    "RandomForestRegressor",
+
+    "GradientBoostingClassifier",
+
+    "GradientBoostingRegressor",
+
+    "XGBClassifier",
+
+    "XGBRegressor"
+
+]
 
 
 

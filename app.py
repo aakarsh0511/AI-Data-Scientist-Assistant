@@ -7,33 +7,20 @@ from src.llm import generate_business_insights
 from src.report_generator import create_pdf_report
 if "best_model" not in st.session_state:
     st.session_state.best_model = None
-
-
 if "X_data" not in st.session_state:
     st.session_state.X_data = None
-
-
 if "problem_type" not in st.session_state:
     st.session_state.problem_type = None
-
-
 if "shap_values" not in st.session_state:
     st.session_state.shap_values = None
-
-
 if "X_processed" not in st.session_state:
     st.session_state.X_processed = None
-
-
 if "model_results" not in st.session_state:
     st.session_state.model_results = None
-
 if "shap_summary" not in st.session_state:
     st.session_state.shap_summary = None
-
 if "ai_report" not in st.session_state:
     st.session_state.ai_report = None
-
 from src.data_processing import (
     load_dataset,
     get_dataset_summary,
@@ -47,32 +34,18 @@ from src.eda import (
     categorical_analysis,
     generate_basic_insights
 )
-
 from src.problem_detection import detect_problem_type
-
 from src.preprocessing import create_preprocessor
-
 from src.model_training import train_models
-
-
-
-
-
 # Page Configuration
-
 st.set_page_config(
     page_title="AI Data Scientist",
     page_icon="🤖",
     layout="wide"
 )
-
-
-
 st.title(
     "🤖 AI Data Scientist Assistant"
 )
-
-
 st.write(
     """
 Upload any dataset and automatically perform:
@@ -84,54 +57,29 @@ Upload any dataset and automatically perform:
 - AI Generated Business Insights
 """
 )
-
 st.divider()
-
-
-
 uploaded_file = st.file_uploader(
     "Upload CSV or Excel file",
     type=["csv", "xlsx"]
 )
-
-
-
 if uploaded_file is not None:
-
-
     # Load Dataset
-
     df = load_dataset(uploaded_file)
-
-
     st.success(
         "Dataset loaded successfully!"
     )
-
-
     # Dataset Summary
-
     st.header(
         "📊 Dataset Overview"
     )
-
-
     summary = get_dataset_summary(df)
-
-
     col1, col2, col3, col4 = st.columns(4)
-
-
     with col1:
-
         st.metric(
             "Rows",
             summary["Number of Rows"]
         )
-
-
     with col2:
-
         st.metric(
             "Columns",
             summary["Number of Columns"]
@@ -467,25 +415,37 @@ if st.button("Generate SHAP Explanation"):
 
 
 
-shap_importance = pd.DataFrame(
-    {
-        "Feature": st.session_state.X_processed.columns,
-
-        "Importance": abs(
-            st.session_state.shap_values.values
-        ).mean(axis=0)
-    }
-)
+if st.session_state.X_processed is not None:
 
 
-shap_importance = (
-    shap_importance
-    .sort_values(
+    shap_importance = pd.DataFrame(
+        {
+            "Feature": st.session_state.X_processed.columns,
+
+            "Importance": abs(
+                st.session_state.shap_values.values
+            ).mean(axis=0)
+
+        }
+    )
+
+
+    shap_importance = shap_importance.sort_values(
         by="Importance",
         ascending=False
+    ).head(10)
+
+
+    st.dataframe(
+        shap_importance
     )
-    .head(10)
-)
+
+
+else:
+
+    st.warning(
+        "Please generate SHAP explanation first."
+    )
 
 
 st.session_state.shap_summary = (
