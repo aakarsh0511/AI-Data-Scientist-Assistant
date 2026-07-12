@@ -5,6 +5,12 @@ import matplotlib.pyplot as plt
 from src.explainability import explain_model
 from src.llm import generate_business_insights
 from src.report_generator import create_pdf_report
+from src.feature_engineering import (feature_engineering_pipeline)
+from src.feature_selection import (select_features_using_shap)
+from src.model_optimization import (retrain_optimized_model)
+from src.model_comparison import compare_models
+
+
 if "best_model" not in st.session_state:
     st.session_state.best_model = None
 if "X_data" not in st.session_state:
@@ -23,6 +29,23 @@ if "ai_report" not in st.session_state:
     st.session_state.ai_report = None
 if "df" not in st.session_state:
     st.session_state.df = None
+if "selected_features" not in st.session_state:
+    st.session_state.selected_features = None
+if "feature_importance" not in st.session_state:
+    st.session_state.feature_importance = None
+if "optimized_model" not in st.session_state:
+    st.session_state.optimized_model = None
+if "optimized_score" not in st.session_state:
+    st.session_state.optimized_score = None
+if "y_data" not in st.session_state:
+    st.session_state.y_data = None
+if "optimized_model_results" not in st.session_state:
+    st.session_state.optimized_model_results = None
+if "optimized_features" not in st.session_state:
+    st.session_state.optimized_features = None
+if "optimized_model_results" not in st.session_state:
+    st.session_state.optimized_model_results = None
+
 from src.data_processing import (
     load_dataset,
     get_dataset_summary,
@@ -184,23 +207,6 @@ if df is not None:
         st.info("Please upload a dataset first.")
 
 
-    # Insights
-
-    st.subheader(
-        "Automated Insights"
-    )
-   
-
-    insights = generate_basic_insights(df)
-
-
-    for insight in insights:
-
-        st.write(
-            "• " + insight
-        )
-
-
 
     # Missing Values
 
@@ -321,6 +327,25 @@ if st.button("Train Models"):
     y = df_ml[target_column]
 
 
+    # Feature Engineering
+
+    X, feature_report = feature_engineering_pipeline(
+        X
+    )
+
+
+    st.session_state.feature_report = feature_report
+
+
+    st.subheader(
+        "⚙️ Feature Engineering Report"
+    )
+
+    st.write(
+        feature_report
+    )
+
+
     problem_type = detect_problem_type(
         df,
         target_column
@@ -351,7 +376,7 @@ if st.button("Train Models"):
     st.session_state.best_model = best_model
 
     st.session_state.X_data = X
-
+    st.session_state.y_data = y
     st.session_state.problem_type = problem_type
 
     st.session_state.model_results = results
@@ -378,6 +403,9 @@ if st.button("Train Models"):
     st.success(
         "Best Model Selected Automatically"
     )
+    st.info(
+    "Model trained using automatically engineered features."
+)
     st.header(
     "🔍 Model Explainability"
 )
@@ -393,27 +421,23 @@ if st.button("Generate SHAP Explanation"):
             st.session_state.X_data
         )
         st.session_state.shap_values = shap_values
-
         st.session_state.X_processed = X_processed
 
-        st.session_state.shap_values = shap_values
-
-        st.session_state.X_processed = X_processed
-
-
+        selected_features, feature_importance = (
+            select_features_using_shap(
+                shap_values,
+                X_processed,
+                st.session_state.X_data
+            )
+        )
+        st.session_state.selected_features = (
+            selected_features)
+        st.session_state.feature_importance = feature_importance
         st.success(
-            "SHAP values generated successfully"
-        )
-
-
+            "SHAP values generated successfully")
         st.subheader(
-            "Feature Importance"
-        )
-
-
+            "Feature Importance")
         fig, ax = plt.subplots()
-
-
         shap.summary_plot(
             shap_values,
             X_processed,
@@ -478,8 +502,125 @@ if shap_importance is not None:
 else:
     st.session_state.shap_summary = "SHAP importance not generated yet."
 
+if st.session_state.selected_features:
+
+    st.subheader(
+        "⭐ SHAP Selected Important Features"
+    )
 
 
+    selected_df = pd.DataFrame(
+        {
+            "Selected Features":
+            st.session_state.selected_features
+        }
+    )
+
+
+    st.dataframe(
+        selected_df,
+        use_container_width=True
+    )
+st.header(
+    "⚡ Model Optimization"
+)
+
+
+if st.button(
+    "Retrain Using Important Features"
+):
+
+    if st.session_state.selected_features is not None:
+
+
+        optimized_model, optimized_score, X_selected = (
+            retrain_optimized_model(
+
+                st.session_state.X_data,
+
+                st.session_state.y_data,
+
+                st.session_state.selected_features,
+
+                st.session_state.best_model,
+
+                st.session_state.problem_type
+            )
+        )
+
+
+        # Store optimized results
+
+        st.session_state.optimized_model = optimized_model
+
+        st.session_state.optimized_score = optimized_score
+
+        st.session_state.optimized_model_results = optimized_score
+
+        st.session_state.optimized_features = (
+            st.session_state.selected_features
+        )
+
+
+        st.success(
+            "Optimized Model Retrained Successfully"
+        )
+
+
+        st.metric(
+            "Optimized Model Score",
+            optimized_score
+        )
+
+
+    else:
+
+        st.warning(
+            "Generate SHAP feature selection first."
+        )
+st.header(
+    "📊 Feature Optimization Results"
+)
+
+
+if (
+    st.session_state.optimized_model_results is not None
+    and
+    st.session_state.optimized_features is not None
+):
+
+
+    comparison = compare_models(
+
+        original_score=max(
+            st.session_state.model_results.values()
+        ),
+
+        optimized_score=
+        st.session_state.optimized_model_results,
+
+
+        original_features=
+        len(st.session_state.X_data.columns),
+
+
+        selected_features=
+        len(st.session_state.optimized_features)
+
+    )
+
+
+    st.dataframe(
+        comparison,
+        use_container_width=True
+    )
+
+
+else:
+
+    st.info(
+        "Retrain optimized model to see comparison."
+    )
 st.header(
     "🤖 AI Business Analyst Report"
 )
@@ -593,7 +734,5 @@ if st.button(
 
     else:
 
-        st.warning(
-            "Generate model, SHAP and AI insights first."
-        )
+        pass
 
