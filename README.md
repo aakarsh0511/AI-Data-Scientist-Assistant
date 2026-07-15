@@ -2,6 +2,10 @@
 
 > An end-to-end AI-powered Data Science platform that automates the complete machine learning workflow — from raw dataset upload to business-ready insights.
 
+## Live Demo
+
+**🌐 Web Application:** https://ai-data-scientist-assistant-05.streamlit.app/
+
 ---
 
 # Project Overview
