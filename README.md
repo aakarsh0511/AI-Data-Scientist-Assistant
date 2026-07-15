@@ -1,4 +1,4 @@
-# 🤖 AI Data Scientist
+# AI Data Scientist
 
 > An end-to-end AI-powered Data Science platform that automates the complete machine learning workflow — from raw dataset upload to business-ready insights.
 
